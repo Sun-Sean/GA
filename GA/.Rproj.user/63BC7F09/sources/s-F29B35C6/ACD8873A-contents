@@ -1,0 +1,76 @@
+#' Fitness
+#'
+#' Calculate the fitness of each individual in the population
+#' @return
+#' @author Wei-Hsiang Sun
+#' @param datax design matrix
+#' @param datay outcome
+#' @param p the size of population
+#' @param mu mutation probability
+#' @param selection_type type of selection to use
+#' @param model_type type of model to use
+#' @param max_iter maximum iteration
+#' @param k groups for tounament selection
+#' @source(".R/Mutation.R")
+#' @source(".R/Fitness.R")
+#' @source(".R/selection.R")
+#' @source(".R/crossover.R")
+#' @source(".R/Initialization.R")
+
+select <- function(datax,datay,p,mu,
+                   selection_type,
+                   model_type,
+                   max_iter = 100,
+                   fitness_func = fitness_aic,
+                   k=NULL){
+  # generate initial population
+  # generate initial population
+  population <- init(p,datax)
+
+  # convert datatype
+  datax <- as.matrix(datax)
+
+  if(is.null(fitness_func)){
+    fitness_func <- fitness_aic
+  }
+
+  gene_length <- dim(datax)[2]
+
+  # begin iteration
+  for(iter in 1:max_iter){
+
+    # get fitness
+    fitnesses <- fitness_func(datax,datay,population,p,model_type)
+
+    # begin selection
+    if(selection_type == 'twoprop'){
+      parents <- twopropselection(fitnesses)
+    }else if(selection_type == 'tournament'){
+      parents <- tournament(fitnesses,k)
+    }else if(selection_type == 'rank'){
+      parents <- rankselection(rank(fitnesses))
+    }else if(selection_type == 'stochastic'){
+      parents <- sus(fitnesses)
+    }
+
+    # crossover
+    offsprings <- crossover(parents,population)
+
+    # mutation
+    population <- mutation(offsprings,mu)
+
+    # prevent all zeros
+    while(any(rowSums(population) < 1)){
+      index_zeros <- which(rowSums(population) < 1)[1]
+      population[index_zeros,] <- sample(c(0,1),size=gene_length,replace = TRUE)
+    }
+  print(AIC_min(datax,datay,population,p,model_type))
+  }
+  fitnesses <- fitness_func(datax,datay,population,p,model_type)
+  fittest_individual <- which.max(fitnesses)
+  fitness_best <- fitnesses[fittest_individual]
+  return(list('fitness' = fitness_best,
+              'individual' = population[fittest_individual,]))
+}
+
+

@@ -1,0 +1,26 @@
+{
+    "id": "5F3AF822",
+    "path": "~/GitHub/s243-project/GA/R/crossover.R",
+    "project_path": "R/crossover.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1639287584895.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "12,4",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1639287599,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1639287599431,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,67 @@
+library(assertthat)
+
+#' Fitness
+#'
+#' Calculate the fitness of each individual in the population
+#' @return
+#' @author Wei-Hsiang Sun
+#' @param datax design matrix
+#' @param datay outcome
+#' @param P the size of population
+#' @param population the population information
+#' @param type type of model to use
+
+fitness_aic <- function(datax,datay,population,P,type){
+
+  # vector to store fitness for each individual
+  AICs <- rep(0,P)
+
+  # for logistic regression
+  if(type == 'glm'){
+    for(indiv in 1:P){
+      glm <- glm(datay ~ datax[,(population[indiv,] > 0)],
+                  family = "binomial")
+      AICs[indiv] <- AIC(glm)
+    }
+    fitnesses <- (AICs)
+    return(fitnesses)
+  }
+  # for linear regression
+  if(type == 'lm'){
+    for(indiv in 1:P){
+      lm <- lm(datay ~ datax[,(population[indiv,] > 0)])
+      AICs[indiv] <- AIC(lm)
+      }
+    fitnesses <- (AICs)
+    return(fitnesses)
+  }
+}
+
+# AIC
+AIC_min <- function(datax,datay,population,P,type){
+
+  # vector to store fitness for each individual
+  AICs <- rep(0,P)
+
+  # for logistic regression
+  if(type == 'glm'){
+    for(indiv in 1:P){
+      glm <- glm(datay ~ datax[,(population[indiv,] > 0)],
+                 family = "binomial")
+      AICs[indiv] <- AIC(glm)
+    }
+    fitnesses <- min(AICs)
+    return(fitnesses)
+  }
+  # for linear regression
+  if(type == 'lm'){
+    for(indiv in 1:P){
+      lm <- lm(datay ~ datax[,(population[indiv,] > 0)])
+      AICs[indiv] <- AIC(lm)
+    }
+    fitnesses <- fitnesses <- min(AICs)
+    return(fitnesses)
+  }
+}
+
+

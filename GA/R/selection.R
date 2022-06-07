@@ -1,0 +1,159 @@
+init_parents <- function(data, target, pop_size){
+  #' Initialization
+  #'
+  #' Generate a random population as the first chromosome generation
+  #'
+  #' @return Returns a pop_size by predictor_size matrix with columns named by predictor names
+  #' @author Chloe Zhang
+  #' @param data data.frame object corresponding to training set, dim = (N, 1 + predictor_size)
+  #' @param target y column indicated by name or index
+  #' @param pop_size the size of population
+  #' @examples 
+  #' example_df = data.frame(x1 = c(1,2,3,4,5), x2 = c(10,34,19,139,34), x3 = c(2,35,323,5,23), y = c(4,12,54,23,6))
+  #' init_parents(data = example_df, target = 'y', pop_size = 10)
+
+  assertthat::assert_that((as.integer(target) == target & as.integer(target) <= dim(data)[2])| target %in% colnames(data))
+  assertthat::assert_that(as.integer(pop_size) == pop_size)
+  assertthat::assert_that(as.integer(pop_size) == pop_size)
+  if (target %in% colnames(data)) {
+    # target is the name of target column in whatever types
+    x_colnames <- colnames(data)[! colnames(data) %in% c(target)]
+  } else {
+    # target is the index of the target column and should have type of double or integer
+    x_colnames <- colnames(data[, -target])
+  }
+  # Generate parent data frame randomly based on the population size that is initialized by pop_size
+  # Initialize the parent data frame column names
+  parents <- matrix(sample(c(0,1), replace=TRUE, size=pop_size*length(x_colnames)), nrow = pop_size, ncol = length(x_colnames))
+  colnames(parents) <- x_colnames
+  return(parents)
+}
+
+onepropselection <- function(fitness){
+  #' Proportional Selection based
+  #'
+  #' Select one parent with probability proportional to fitness
+  #' Select the other parent randomly
+  #' Iterate this process for pop_size times
+  #'
+  #' @return Returns a matrix pop_size by 2 documenting the row index of each parent in population
+  #' @author Chloe Zhang
+  #' @param fitness fitness for individual solutions from fit
+  #' @examples 
+  #' onepropselection(fitness = c(0.1, 0.14, 0.06, 0.1, 0.12, 0.24, 0.06, 0.03, 0.05, 0.1))
+  pop_size = length(fitness)
+  firstparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE, prob = fitness)
+  secondparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE)
+  selection_pool = matrix(cbind(firstparent_index, secondparent_index), nrow = pop_size, ncol = 2)
+  return(selection_pool)
+}
+
+twopropselection <- function(fitness){
+  #' Proportional Selection based
+  #'
+  #' Select one parent with probability proportional to fitness
+  #' Select the other parent randomly
+  #' Iterate this process for pop_size times
+  #'
+  #' @return Returns a matrix pop_size by 2 documenting the row index of each parent in population
+  #' @author Chloe Zhang
+  #' @param fitness fitness for individual solutions from fit
+  #' @examples 
+  #' twopropselection(fitness = c(0.1, 0.14, 0.06, 0.1, 0.12, 0.24, 0.06, 0.03, 0.05, 0.1))
+  pop_size = length(fitness)
+  firstparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE, prob = fitness)
+  secondparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE, prob = fitness)
+  selection_pool = matrix(cbind(firstparent_index, secondparent_index), nrow = pop_size, ncol = 2)
+  return(selection_pool)
+}
+
+
+tournament <- function(fitness, K){
+  #' Tournament based selection
+  #'
+  #' Select K parents randomly and pick the parent with highest fitness as the first parent
+  #' Select the other parent randomly
+  #' Iterate this process for pop_size times
+  #'
+  #' @return Returns a matrix pop_size by 2 documenting the row index of each parent in population
+  #' @author Chloe Zhang
+  #' @param fitness fitness for individual solutions from fit
+  #' @param K Number of tournaments
+  #' @examples 
+  #' tournament(fitness = c(0.1, 0.14, 0.06, 0.1, 0.12, 0.24, 0.06, 0.03, 0.05, 0.1), K = 4)
+  pop_size = length(fitness)
+  assertthat::assert_that(K <= pop_size)
+  selection_pool = matrix(0, nrow = pop_size, ncol = 2)
+  for (i in c(1:pop_size)) {
+    K_pool = sample(1:pop_size, size = K, replace = FALSE)
+    parent = K_pool[which.max(fitness[K_pool])]
+    selection_pool[i,1] = parent
+    selection_pool[i,2] = sample(1:pop_size, size = 1, replace = FALSE)
+  }
+  return(selection_pool)
+}
+
+rankselection <- function(fitness_rank) {
+  #' Rank based selection
+  #'
+  #' Select one parent with probability proportional to reverse fitness_rank
+  #' Select the other parent randomly
+  #' Iterate this process for pop_size times
+  #'
+  #' @return Returns a matrix pop_size by 2 documenting the row index of each parent in population
+  #' @author Chloe Zhang
+  #' @param fitness_rank fitness rank for individual solutions
+  #' @examples 
+  #' rankselection(fitness_rank = c(1, 6, 5, 9, 10, 7, 2, 3, 8, 4))
+  pop_size = length(fitness_rank)
+  prob = rank(-fitness_rank)/sum(fitness_rank)
+  firstparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE, prob = prob)
+  secondparent_index <- sample(1:pop_size, size = pop_size, replace = TRUE)
+  selection_pool = matrix(cbind(firstparent_index, secondparent_index), nrow = pop_size, ncol = 2)
+  return(selection_pool)
+}
+
+## Stochastic Universal Sampling
+sus = function(fitness) {
+  #' Proportional based selection
+  #'
+  #' Generate a Roulette Wheel but have two fixed points
+  #' Roll the wheel until it stops naturally
+  #' Select two parents with index where the two fixed points locate
+  #' Iterate this process for pop_size times
+  #'
+  #' @return Returns a matrix pop_size by 2 documenting the row index of each parent in population
+  #' @author Chloe Zhang
+  #' @param fitness fitness for individual solutions
+  #' @examples 
+  #' sus(fitness = c(0.1, 0.14, 0.06, 0.1, 0.12, 0.24, 0.06, 0.03, 0.05, 0.1) )
+
+  pop_size = length(fitness)
+  cum_fitness = cumsum(fitness)
+  selection_pool = matrix(0, nrow = pop_size, ncol = 2)
+  for (i in c(1:pop_size)) {
+    fix_point1 = runif(1, 0, 1)
+    fix_point2 = runif(1, 0, 1)
+    print(c(fix_point1, fix_point2))
+    if (fix_point1 <= cum_fitness[1]) {
+      selection_pool[i,1] = 1
+    }
+    if (fix_point2 <= cum_fitness[1]) {
+      selection_pool[i,2] = 1
+    }
+    for (j in c(1:(pop_size-1))) {
+      if (cum_fitness[j] < fix_point1 & cum_fitness[j+1] >= fix_point1) {
+        selection_pool[i,1] = j+1
+        print(c(cum_fitness[j], fix_point1, cum_fitness[j+1]))
+      }
+      if (cum_fitness[j] < fix_point2 & cum_fitness[j+1] >= fix_point2) {
+        selection_pool[i,2] = j+1
+        print(c(cum_fitness[j], fix_point2, cum_fitness[j+1]))
+      }
+    }
+  }
+  return(selection_pool)
+}
+
+
+

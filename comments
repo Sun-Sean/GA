@@ -1,0 +1,62 @@
+A-: Good job overall. Some limitations noted below.
+
+## ease of accessing package, help, tests:
+
+Good. 
+
+## main help page (select):
+
+Good overall, including examples. No real description of algorithm.
+
+## quality of user interface (function arguments, flexibility):
+
+Should have a default for population size.
+
+Good flexibility in terms of selection type.
+
+No way to specify family for glm, so can only do logistic regression.
+No way to suppress verbose printing.
+
+## performance on my tests:
+
+performance on baseball known: finds best model
+performance on baseball full: finds a good model but not the best
+performance on big-p: Finds an ok model, but not near the best.
+
+## testing
+
+Tests pass, but lots of warnings.
+
+Tests focus on expected output format without testing of correctness of calculation or any testing of performance.
+
+## writeup (including examples):
+
+Nicely presented. Main limitation is that in your examples you do not assess performance relative to best model or (if simulated) true model.
+
+## code efficiency
+
+A bit slow on small examples, probably partly due to reaching max number of iterations.
+Very slow on my big GLM example.
+
+## code organization/clarity/elegance:
+
+Easy to follow and code is concise. 
+
+init_parents is not used.
+Some assertions in helper functions, but probably better placed in main function.
+
+All zero models are fine.
+
+You assume the best model is in the last generation, but it could have occurred in a previous generation.
+
+## code comments/formatting:
+
+Good.
+
+## parallelization:
+
+None
+
+## equality of workload:
+
+Good

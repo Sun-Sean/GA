@@ -1,0 +1,32 @@
+library(testthat)
+library(assertthat)
+
+#' Mutation
+#'
+#' Calculate the fitness of each individual in the population
+#' @return
+#' @author Wei-Hsiang Sun
+#' @param mat matrix of offsprings
+#' @param mu probability of mutation
+
+mutation <- function(mat, mu){
+  # insure input
+  assert_that(is.matrix(mat))
+  assert_that(is.numeric(mu))
+
+  # dimension of the dataframe
+  row <- dim(mat)[1]
+  col <- dim(mat)[2]
+
+  # get the mutation points in matrix randomly
+  # uniform 0 1 datapoints are compared to threshold mu
+  MutationPoints <- runif(row*col) < mu
+
+  # flip bits where mutation happens
+  mat[MutationPoints] <- 1 - mat[MutationPoints]
+
+  # return result
+  return(mat)
+
+}
+

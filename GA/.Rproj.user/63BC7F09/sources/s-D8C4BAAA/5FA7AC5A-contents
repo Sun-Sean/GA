@@ -1,0 +1,57 @@
+library(assertthat)
+
+# input:
+# -type: type of regression
+# -ydata: the response variable
+# -xdata: the design matrix (type: dataframe)
+# -population: the matrix that stores population information.
+# -P: population size
+fitness_aic <- function(datax,datay,population,P,type){
+  
+  # vector to store fitness for each individual
+  AICs <- rep(0,P)
+  
+  # for logistic regression
+  if(type == 'glm'){
+    for(indiv in 1:P){
+      glm <- glm(datay ~ datax[,(population[indiv,] > 0)],
+                  family = "binomial")
+      AICs[indiv] <- AIC(glm)
+    }
+    fitnesses <- (max(AICs)+1 - AICs)/sum(max(AICs)+1 - AICs)
+    return(fitnesses)
+  }
+  # for linear regression
+  if(type == 'lm'){
+    for(indiv in 1:P){
+    lm <- lm(datay ~ datax[,(population[indiv,] > 0)])
+    AICs[indiv] <- AIC(lm)
+    }
+    fitnesses <- (max(AICs)+1 - AICs)/sum(max(AICs)+1 - AICs)
+    return(fitnesses)
+  }
+}
+
+# calculate the fitness based on fitness
+fitness_rankbased <- function(fitness_func=fitness_aic,
+                              ...){
+  # get the fitness of each individual in the population
+  fitnesses <- fitness_func(...)
+  # calculate the rank for each individual
+  return(rank(fitnesses))
+}
+
+datax <- data.frame(1:10)
+datay <- (datax + rnorm(10))[,1]
+population <- matrix(c(1),1,1)
+P = 1
+type = 'lm'
+
+fitness_rankbased(population = population,
+                  datay = datay,
+                  datax = datax,
+                  P = P,
+                  type = 'lm')
+
+fitness_aic(datax,datay,population, P, 'lm')
+

@@ -1,0 +1,89 @@
+#' Fitness
+#'
+#' Calculate the fitness of each individual in the population
+#' @return
+#' @author Wei-Hsiang Sun
+#' @param datax design matrix
+#' @param datay outcome
+#' @param p the size of population
+#' @param mu mutation probability
+#' @param selection_type type of selection to use
+#' @param model_type type of model to use
+#' @param max_iter maximum iteration
+#' @param k groups for tounament selection
+#' @source(".R/Mutation.R")
+#' @source(".R/Fitness.R")
+#' @source(".R/selection.R")
+#' @source(".R/crossover.R")
+#' @source(".R/Initialization.R")
+setwd('C:/Users/Sean/Desktop/GA/GA')
+source('./R/crossover.R')
+source('./R/selection.R')
+source('./R/Mutation.R')
+source('./R/Initialization.R')
+source('./R/Fitness.R')
+select <- function(datax,datay,p,mu=0.01,
+                   selection_type='twoprop',
+                   model_type='lm',
+                   max_iter = 100,
+                   fitness_func = fitness_aic,
+                   k=NULL){
+  # generate initial population
+  # generate initial population
+  population <- init(p,datax)
+
+  # convert datatype
+  datax <- as.matrix(datax)
+
+  if(is.null(fitness_func)){
+    fitness_func <- fitness_aic
+  }
+
+  gene_length <- dim(datax)[2]
+
+  # begin iteration
+  for(iter in 1:max_iter){
+    #print(population)
+    # get fitness
+    fitnesses <- fitness_func(datax,datay,population,p,model_type)
+
+    #print(fitnesses)
+
+    # begin selection
+    if(selection_type == 'twoprop'){
+      parents <- twopropselection(fitnesses)
+    }else if(selection_type == 'oneprop'){
+      parents <- onepropselection(fitnesses)
+    }else if(selection_type == 'tournament'){
+      parents <- tournament(fitnesses,k)
+    }else if(selection_type == 'rank'){
+      parents <- rankselection(rank(fitnesses))
+    }else if(selection_type == 'stochastic'){
+      parents <- sus(fitnesses)
+    }
+
+    # crossover
+    offsprings <- crossover(parents,population)
+
+    # mutation
+    population <- mutation(offsprings,mu)
+
+    # prevent all zeros
+    while(any(rowSums(population) < 1)){
+      index_zeros <- which(rowSums(population) < 1)[1]
+      population[index_zeros,] <- population[sample(1:gene_length,1),]
+    }
+  print(AIC_min(datax,datay,population,p,model_type))
+  }
+  fitnesses <- fitness_func(datax,datay,population,p,model_type)
+  fittest_individual <- which.max(fitnesses)
+  fitness_best <- fitnesses[fittest_individual]
+  return(list('fitness' = fitness_best,
+              'individual' = population[fittest_individual,]))
+}
+data <- read.csv('./R/example_df.csv')
+x <- data[,3:18]
+y <- data[,2]
+true <- c(0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1) == 1
+AIC(lm(y~as.matrix(x[true])))
+select(x,y,p=10,max_iter = 100)

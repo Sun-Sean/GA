@@ -1,0 +1,135 @@
+#' Fitness
+#'
+#' Calculate the fitness of each individual in the population
+#' @return
+#' @author Wei-Hsiang Sun
+#' @param datax design matrix
+#' @param datay outcome
+#' @param p the size of population
+#' @param mu mutation probability
+#' @param selection_type type of selection to use
+#' @param model_type type of model to use
+#' @param max_iter maximum iteration
+#' @param k groups for tounament selection
+#' @param threshold the converging threshold
+#' @export
+#'
+#' @source(".R/Mutation.R")
+#' @source(".R/Fitness.R")
+#' @source(".R/selection.R")
+#' @source(".R/crossover.R")
+#' @source(".R/Initialization.R")
+setwd('C:/Users/Sean/Desktop/GA/GA')
+install.packages('GA_0.0.0.1.tar.gz')
+remove.packages(GA)
+detach("package:GA", unload = TRUE)
+source('./R/crossover.R')
+source('./R/selection.R')
+source('./R/Mutation.R')
+source('./R/Initialization.R')
+source('./R/Fitness.R')
+select <- function(datax,datay,p,mu=0.01,
+                   selection_type='twoprop',
+                   model_type='lm',
+                   max_iter = 100,
+                   fitness_func = fitness_aic,
+                   k=NULL,
+                   threshold = 10^-5){
+
+  # generate initial population
+  population <- init(p,datax)
+
+  # convert datatype
+  datax <- as.matrix(datax)
+
+  if(is.null(fitness_func)){
+    fitness_func <- fitness_aic
+  }
+
+  # get number of features
+  gene_length <- dim(datax)[2]
+
+  # convergence criteria
+  converge <- FALSE
+
+  # aic of previous population
+  aic_prev <- AICs(datax,datay,population,p,model_type)
+
+  # aic of current population
+  aic_curr <- aic_prev
+
+  # begin iteration
+  for(iter in 1:max_iter){
+
+    # get fitness
+    fitnesses <- fitness_func(datax,datay,population,p,model_type)
+
+    # begin selection
+    if(selection_type == 'twoprop'){
+      parents <- twopropselection(fitnesses)
+    }else if(selection_type == 'oneprop'){
+      parents <- onepropselection(fitnesses)
+    }else if(selection_type == 'tournament'){
+      parents <- tournament(fitnesses,k)
+    }else if(selection_type == 'rank'){
+      parents <- rankselection(rank(-fitnesses))
+    }else if(selection_type == 'stochastic'){
+      parents <- sus(fitnesses)
+    }
+
+    # crossover
+    offsprings <- crossover(parents,population)
+
+    # mutation
+    population <- mutation(offsprings,mu)
+
+    # prevent all zeros
+    while(any(rowSums(population) < 1)){
+      index_zeros <- which(rowSums(population) < 1)[1]
+      population[index_zeros,] <- population[sample(1:gene_length,1),]
+    }
+    AICs <- AICs(datax,datay,population,p,model_type)
+    cat('iteration',iter,'\n')
+    cat('min AIC',min(AICs),'\n')
+    cat('max AIC',max(AICs),'\n')
+    cat('quantiles',quantile(AICs),'\n')
+
+    # update aic population
+    aic_prev <- aic_curr
+    aic_curr <- AICs
+
+    # see whether converge
+    cat('between population convergence',abs(min(aic_prev) - min(aic_curr)) < min(aic_curr)*threshold,'\n')
+    cat('within population convergence',abs(mean(aic_curr) - min(aic_curr)) < median(aic_curr)*threshold,'\n\n')
+    converge <- (abs(min(aic_prev) - min(aic_curr)) < min(aic_curr)*threshold) &
+      (abs(mean(aic_curr) - min(aic_curr)) < median(aic_curr)*threshold)
+
+    # Check convergence criteria
+    if(converge){
+      fitnesses <- fitness_func(datax,datay,population,p,model_type)
+      fittest_individual <- which.max(fitnesses)
+      return(list('aic' = min(AICs),
+                  'individual' = population[fittest_individual,]))
+    }
+  }
+  fitnesses <- fitness_func(datax,datay,population,p,model_type)
+  fittest_individual <- which.max(fitnesses)
+  return(list('aic' = min(AICs),
+              'individual' = population[fittest_individual,]))
+}
+
+
+library("VSURF")
+data("toys")
+set.seed(3101318)
+x <- toys[['x']]
+y <- toys[['y']]
+#select(x,y,p=10,selection_type = 'tournament',max_iter = 100,k=5,threshold = 10^-3 )
+select(x,y,p=10,selection_type = 'tournament',max_iter = 100,model_type = 'glm',k=5,threshold = 10^-3 )
+
+data <- read.csv('./R/example_df.csv')
+x <- data[,3:18]
+y <- data[,2]
+true <- c(0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1) == 1
+select(x,y,p=20,selection_type = 'tournament',max_iter = 100,k=4,threshold = 4*10^-4 )
+
